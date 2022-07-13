@@ -1,0 +1,6 @@
+# Folder view configuration files
+.DS_Store
+__pycache__
+venv/
+.env
+.vscode/
