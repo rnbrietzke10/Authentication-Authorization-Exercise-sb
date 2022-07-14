@@ -1,8 +1,8 @@
 import os
 from flask import Flask, render_template, redirect, session, flash
 from flask_debugtoolbar import DebugToolbarExtension
-from models import connect_db, db, User
-from forms import RegistrationForm, LoginForm
+from models import connect_db, db, User, Feedback
+from forms import RegistrationForm, LoginForm, FeedbackForm
 from sqlalchemy.exc import IntegrityError
 
 
@@ -38,11 +38,11 @@ def register_user():
         try:
             db.session.commit()
         except IntegrityError:
-            form.username.errors.append("Username is taken. Please pick a different username", "danger")
+            form.username.errors.append("Username is taken. Please pick a different username")
             return render_template('register.html', form=form)
         session["user_id"] = new_user.username
         flash(f"Welcome {new_user.first_name}, you successfully created your account", "success")
-        return redirect('/secret')
+        return redirect(f'/user/{user.username}')
 
     return render_template('register.html', form=form)
 
@@ -64,15 +64,39 @@ def login_user():
 
 
 @app.route('/user/<username>')
-def secret_route(username):
+def user_profile_route(username):
     if "user_id" not in session:
         flash("Please Login", "danger")
         return redirect("/login")
     user = User.query.get_or_404(username)
+    feedback = Feedback.query.all()
 
 
-    return render_template('secret.html', user=user)
+    return render_template('secret.html', user=user, feedback=feedback)
 
+
+# /users/{{user.username}}/delete
+
+# /users/<username>/feedback/add
+@app.route('/users/<username>/feedback/add', methods=["GET", "POST"])
+def add_feedback(username):
+    if "user_id" not in session:
+        flash("Please Login", "danger")
+        return redirect("/login")
+    form = FeedbackForm()
+    if form.validate_on_submit():
+        title = form.title.data
+        content = form.content.data
+        new_feedback = Feedback(title=title, content=content, username=username)
+        db.session.add(new_feedback)
+        db.session.commit()
+        flash("Feedback Added!", 'success')
+        return redirect(f'/user/{username}')
+
+    return render_template('feedback.html', form=form)
+
+# /feedback/{{feed.id}}/edit
+# /feedback/{{feed.id}}/delete
 
 @app.route('/logout', methods=["POST"])
 def logout_user():
