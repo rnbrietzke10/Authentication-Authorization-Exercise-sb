@@ -42,13 +42,15 @@ def register_user():
             return render_template('register.html', form=form)
         session["user_id"] = new_user.username
         flash(f"Welcome {new_user.first_name}, you successfully created your account", "success")
-        return redirect(f'/user/{user.username}')
+        return redirect(f'/user/{new_user.username}')
 
     return render_template('register.html', form=form)
 
 
 @app.route('/login', methods=["GET", "POST"])
 def login_user():
+    if "user_id" in session:
+        return redirect(f"/users/{session['user_id']}")
     form = LoginForm()
     if form.validate_on_submit():
         username = form.username.data
@@ -57,13 +59,13 @@ def login_user():
         if user:
             flash(f"Welcome Back, {user.first_name}", "success")
             session["user_id"] = user.username
-            return redirect(f'/user/{user.username}')
+            return redirect(f'/users/{user.username}')
         else:
             form.username.errors = ["Invalid username/password"]
     return render_template('login.html', form=form)
 
 
-@app.route('/user/<username>')
+@app.route('/users/<username>')
 def user_profile_route(username):
     if "user_id" not in session:
         flash("Please Login", "danger")
@@ -91,11 +93,28 @@ def add_feedback(username):
         db.session.add(new_feedback)
         db.session.commit()
         flash("Feedback Added!", 'success')
-        return redirect(f'/user/{username}')
+        return redirect(f'/users/{username}')
+    btn_text = "Add"
+    return render_template('feedback.html', form=form, btn_text= btn_text)
 
-    return render_template('feedback.html', form=form)
+# /feedback/{{feed.id}}/update
+@app.route("/feedback/<int:feedback_id>/update", methods=["GET", "POST"])
+def update_feedback(feedback_id):
+    if "user_id" not in session:
+        flash("Please login first!", "danger")
+        return redirect('/login')
+    feedback = Feedback.query.get_or_404(feedback_id)
+    user_feedback = {
+        "title": feedback.title,
+        "content": feedback.content
+    }
+    print(user_feedback)
+    form = FeedbackForm(obj=user_feedback)
+    btn_text= "Update"
+    return render_template("feedback.html", form=form, btn_text=btn_text)
 
-# /feedback/{{feed.id}}/edit
+
+
 # /feedback/{{feed.id}}/delete
 
 @app.route('/logout', methods=["POST"])
