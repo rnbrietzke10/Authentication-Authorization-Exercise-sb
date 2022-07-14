@@ -94,8 +94,8 @@ def add_feedback(username):
         db.session.commit()
         flash("Feedback Added!", 'success')
         return redirect(f'/users/{username}')
-    btn_text = "Add"
-    return render_template('feedback.html', form=form, btn_text= btn_text)
+
+    return render_template('add_feedback.html', form=form)
 
 # /feedback/{{feed.id}}/update
 @app.route("/feedback/<int:feedback_id>/update", methods=["GET", "POST"])
@@ -104,14 +104,19 @@ def update_feedback(feedback_id):
         flash("Please login first!", "danger")
         return redirect('/login')
     feedback = Feedback.query.get_or_404(feedback_id)
-    user_feedback = {
-        "title": feedback.title,
-        "content": feedback.content
-    }
-    print(user_feedback)
-    form = FeedbackForm(obj=user_feedback)
-    btn_text= "Update"
-    return render_template("feedback.html", form=form, btn_text=btn_text)
+    form = FeedbackForm(obj=feedback)
+    if feedback.username != session['user_id']:
+        flash("You don't have permission to do that!", "danger")
+        return redirect('/login')
+
+    if form.validate_on_submit():
+        feedback.title = form.title.data
+        feedback.content = form.content.data
+        db.session.commit()
+        flash("Feedback Updated", "success")
+        return redirect(f"users/{feedback.username}")
+
+    return render_template("edit_feedback.html", form=form)
 
 
 
