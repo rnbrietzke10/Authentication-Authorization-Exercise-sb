@@ -15,10 +15,34 @@
     <title>{% block title %}{% endblock%}</title>
   </head>
   <body>
-    <div class="container">
-      {% for category, msg in get_flashed_messages(with_categories=True) %}
-      <div class="alert alert-{{category}}">{{ msg }}</div>
-      {% endfor %} {% block content %} {% endblock %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+      <div class="collapse navbar-collapse" id="navbarColor01">
+        <ul class="navbar-nav me-auto">
+          {% if not session['user_id'] %}
+          <li class="nav-item">
+            <a class="nav-link" href="/login">Login</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/register">Sign Up</a>
+          </li>
+          {% else %}
+          <li class="nav-item">
+            <form action="/logout" method="post">
+              <button class="btn btn-link text-white" type="submit">
+                Logout
+              </button>
+            </form>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </nav>
+    <div class="content">
+      <div class="container">
+        {% for category, msg in get_flashed_messages(with_categories=True) %}
+        <div class="alert alert-{{category}}">{{ msg }}</div>
+        {% endfor %} {% block content %} {% endblock %}
+      </div>
     </div>
   </body>
 </html>
