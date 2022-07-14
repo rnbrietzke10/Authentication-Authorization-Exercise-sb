@@ -42,7 +42,7 @@ def register_user():
             return render_template('register.html', form=form)
         session["user_id"] = new_user.username
         flash(f"Welcome {new_user.first_name}, you successfully created your account", "success")
-        return redirect(f'/user/{new_user.username}')
+        return redirect(f'/users/{new_user.username}')
 
     return render_template('register.html', form=form)
 
@@ -78,6 +78,22 @@ def user_profile_route(username):
 
 
 # /users/{{user.username}}/delete
+@app.route('/users/<username>/delete', methods=["POST"])
+def delete_user(username):
+    if "user_id" not in session:
+        flash("Please login first!", "danger")
+        return redirect('/login')
+    user = User.query.get_or_404(username)
+    if user.username == session['user_id']:
+        db.session.delete(user)
+        db.session.commit()
+        session.pop('user_id')
+        flash("User deleted!", "info")
+        return redirect("/")
+    else:
+        flash("You don't have permission to do that!", "danger")
+        return redirect('/login')
+
 
 # /users/<username>/feedback/add
 @app.route('/users/<username>/feedback/add', methods=["GET", "POST"])
@@ -92,6 +108,7 @@ def add_feedback(username):
         new_feedback = Feedback(title=title, content=content, username=username)
         db.session.add(new_feedback)
         db.session.commit()
+
         flash("Feedback Added!", 'success')
         return redirect(f'/users/{username}')
 
@@ -121,6 +138,21 @@ def update_feedback(feedback_id):
 
 
 # /feedback/{{feed.id}}/delete
+@app.route('/feedback/<int:feedback_id>/delete', methods=["POST"])
+def delete_feedback(feedback_id):
+    if "user_id" not in session:
+        flash("Please login first!", "danger")
+        return redirect('/login')
+    feedback = Feedback.query.get_or_404(feedback_id)
+    if feedback.username == session['user_id']:
+        db.session.delete(feedback)
+        db.session.commit()
+        flash("Feedback deleted!", "info")
+        return redirect(f"users/{feedback.username}")
+    else:
+        flash("You don't have permission to do that!", "danger")
+        return redirect('/login')
+
 
 @app.route('/logout', methods=["POST"])
 def logout_user():
